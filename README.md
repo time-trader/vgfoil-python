@@ -1,3 +1,6 @@
+Xfoil-python fork in order to introduce Vortex Generators to FORTRAN Library.
+The FORTRAN Library is updated with code from VG-Foil by IWES:
+https://gitlab.cc-asp.fraunhofer.de/iwes-cfsd-public/wtrb-aerodynamics/vg-foil
 
 General
 -------
