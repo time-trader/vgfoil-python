@@ -385,18 +385,28 @@ contains
                 !
                 if (LVIsc) then
                     LVConv = viscal(ITMax)
+                    !DanEli: add VG
+                    call addvg(ITMax)
                 end if
+                !Finds minimum Cp on dist for cavitation work 
                 call fcpmin
                 !
                 !cc    IF( LVISC .AND. LPACC .AND. LVCONV ) THEN
                 if (LPAcc .and. (LVConv .or. .not.LVIsc)) then
+                    !Add point to storage arrays
                     call plradd(luplr, IPAct)
+                    !Add point to storage arrays dump file
                     call plxadd(luplx, IPAct)
                 endif
                 !
                 if (LVIsc .and. .not.LPAcc .and. .not.LVConv .and. show_output) write (*, *) 'Type "!" to continue iterating'
                 !
                 !
+                !DanEli
+                !----- load back original solution without considering the effect of VG
+                !      strategy splitted into two steps
+                !IF (LDELVG) CALL DELVG(ITMAX)
+
                 comold = comand
                 argold = comarg
                 !
@@ -558,6 +568,8 @@ contains
                     itmaxs = ITMax + 5
                     if (LVIsc) then
                         LVConv = viscal(itmaxs)
+                        !DanEli: add VG
+                        call addvg(ITMaxs)
                     end if
                     !
                     ADEg = ALFa / DTOr
@@ -588,6 +600,11 @@ contains
                         alast = ADEg
                         clast = CL
                     endif
+                    !
+                    !DanEli
+                    !load back original solution without considering the effect of VG
+                    !strategy splitted into two steps
+                    !call delvg(ITMax)
                     !
                 enddo
                 !cc      CALL ASKC('hit <cr>^',DUMMY,COMARG)
@@ -674,6 +691,8 @@ contains
                 lu = 17
                 call polread(lu, FNAme, error, NAX, NAPol(ip), CPOl(1, 1, ip), &
                         REYnp1(ip), MAChp1(ip), ACRitp(1, ip), XSTripp(1, ip), &
+                        !DanEli
+                        XVGP(1,ip), HVGP(1,ip), &
                         & PTRatp(ip), ETApp(ip), NAMepol(ip), IREtyp(ip), IMAtyp(ip), &
                         ISX, nblp(ip), CPOlsd(1, 1, 1, ip), CODepol(ip), &
                         & VERspol(ip))
@@ -686,7 +705,10 @@ contains
                     nel = 1
                     call polwrit(6, ' ', error, .true., NAX, 1, &
                             NAPol(ip), CPOl(1, 1, ip), IPOl, NIPol, REYnp1(ip), MAChp1(ip), ACRitp(1, ip), &
-                            & XSTripp(1, ip), PTRatp(ip), ETApp(ip), NAMepol(ip), IREtyp(ip), &
+                            & XSTripp(1, ip), &
+                            !DanEli
+                            XVGP(1,ip), HVGP(1,ip), &
+                            PTRatp(ip), ETApp(ip), NAMepol(ip), IREtyp(ip), &
                             IMAtyp(ip), ISX, nel, CPOlsd(1, 1, 1, ip), &
                             & JPOl, NJPol, CODepol(ip), VERspol(ip), .false.)
                     PFName(ip) = FNAme
@@ -743,7 +765,10 @@ contains
                         !
                         call polwrit(lu, FNAme, error, .true., NAX, 1, &
                                 NAPol(ip), CPOl(1, 1, ip), IPOl, NIPol, REYnp1(ip), MAChp1(ip), &
-                                & ACRitp(1, ip), XSTripp(1, ip), PTRatp(ip), ETApp(ip), &
+                                & ACRitp(1, ip), XSTripp(1, ip), &
+                                !DanEli
+                                XVGP(1,ip), HVGP(1,ip), &
+                                PTRatp(ip), ETApp(ip), &
                                 NAMepol(ip), IREtyp(ip), IMAtyp(ip), ISX, nel, &
                                 & CPOlsd(1, 1, 1, ip), JPOl, NJPol, 'XFOIL', VERsion, .true.)
                         if (error) then
@@ -899,9 +924,12 @@ contains
                     ia2 = NAPol(ip)
                     call polwrit(6, ' ', error, .true., NAX, ia1, ia2, &
                             CPOl(1, 1, ip), IPOl, NIPol, REYnp1(ip), MAChp1(ip), ACRitp(1, ip), &
-                            & XSTripp(1, ip), PTRatp(ip), ETApp(ip), &
+                            & XSTripp(1, ip), &
+                            !DanEli
+                            XVGP(1,ip), HVGP(1,ip), &
+                            PTRatp(ip), ETApp(ip), &
                             NAMepol(ip), IREtyp(ip), IMAtyp(ip), ISX, nel, CPOlsd(1, 1, 1, ip), &
-                            & JPOl, NJPol, 'XFOIL', VERsion, .false.)
+                            & JPOl, NJPol, 'VG-FOIL', VERsion, .false.)
                 enddo
                 NIPol = NIPol0
                 !
@@ -1092,9 +1120,12 @@ contains
                         ia2 = NAPol(ip)
                         call polwrit(6, ' ', error, .true., NAX, ia1, ia2, &
                                 CPOl(1, 1, ip), IPOl, NIPol, REYnp1(ip), MAChp1(ip), ACRitp(1, ip), &
-                                & XSTripp(1, ip), PTRatp(ip), ETApp(ip), &
+                                & XSTripp(1, ip), &
+                                !DanEli
+                                XVGP(1,ip), HVGP(1,ip), &
+                                PTRatp(ip), ETApp(ip), &
                                 NAMepol(ip), IREtyp(ip), IMAtyp(ip), ISX, 1, CPOlsd(1, 1, 1, ip), &
-                                & JPOl, NJPol, 'XFOIL', VERsion, .false.)
+                                & JPOl, NJPol, 'VG-FOIL', VERsion, .false.)
                         do
                             if (show_output) write (*, 99008)
                             99008              format (/' Enter alpha(s) of points to be removed:  ', $)
@@ -1192,9 +1223,12 @@ contains
                     ia2 = -1
                     call polwrit(6, ' ', error, .true., NAX, ia1, ia2, &
                             CPOl(1, 1, ip), IPOl, NIPol, REYnp1(ip), MAChp1(ip), ACRitp(1, ip), &
-                            & XSTripp(1, ip), PTRatp(ip), ETApp(ip), &
+                            & XSTripp(1, ip), &
+                            !DanEli
+                            XVGP(1,ip), HVGP(1,ip), &
+                            PTRatp(ip), ETApp(ip), &
                             NAMepol(ip), IREtyp(ip), IMAtyp(ip), ISX, 1, CPOlsd(1, 1, 1, ip), &
-                            & JPOl, NJPol, 'XFOIL', VERsion, .false.)
+                            & JPOl, NJPol, 'VG-FOIL', VERsion, .false.)
                     NIPol = NIPol0
                     if (show_output) write (*, 99009)
                     99009      format (/' Enter new airfoil name of polar:  ', $)
@@ -1229,6 +1263,8 @@ contains
                 endif
                 !
                 !--------------------------------------------------------
+            elseif (comand=='TRVG') then
+                !trvg command non implemented
             elseif (comand=='FMOM') then
                 call mhinge
                 if (show_output) write (*, 99010) XOF, YOF, HMOm, HFX, HFY
@@ -2799,5 +2835,153 @@ contains
         close (lu)
         !
     end subroutine dcpout
+
+    SUBROUTINE DELVG(ITER)
+        !---- This subroutine restores the solution before the application of VG.      
+        use i_xfoil
+        use i_xbl
+        !      
+        IF(LVISC) THEN
+            !----  first step       
+            LENHMIX(1) = .FALSE.
+            LENHMIX(2) = .FALSE.
+            !---- Force BL initialization by old value of CTAU, CTQ
+            DO IS = 1, 2
+                DO IBL=2, NBL(IS)
+                    CTAU(IBL,IS) = CTAUNEM(IBL,IS)
+                    CTQ(IBL,IS) = CTQNEM(IBL,IS)
+                ENDDO
+            ENDDO            
+            WRITE(*,*) ' '
+            WRITE(*,*) 'Load back solution without VG Enhanced Mixing!'
+            !CALL VISCAL(ITER) !temporary remove for debugging
+            LVConv = viscal(ITER)
+            !----   second step
+            LTRVGT = .FALSE.
+            LTRVGB = .FALSE.
+            XSTRIP(1) = XSTRIPO(1)
+            XSTRIP(2) = XSTRIPO(2)
+            WRITE(*,*) ' '
+            WRITE(*,*) 'Load back solution without VG By-Pass Transition!'
+            !CALL VISCAL(ITER) !temporary remove for debugging
+            LVConv = viscal(ITER)
+        ENDIF
+        !      
+        RETURN
+    END subroutine DELVG
+    !     
+    SUBROUTINE ADDVG(ITER)
+        !---- This subroutine adds the VG effect to the standards solution
+        use i_xfoil
+        use i_xbl
+        use m_xbl, only: xivgset, statusvg, trvg
+        !
+        integer, parameter :: NPRX = 1001
+        real, dimension(NPRX)::xpr, ypr, upr
+        !
+        DATA IVGLIM / 15 /
+        !--------------------------------------------------------------------
+        !     Determine the status of the vortex generator.
+        !     The VG could be active only if its position lies ahead of:
+        !     - the forced transition location
+        !     - the natural transition location
+        !-------------------------------------------------------------------- 
+        !
+        !----- Logical: ENHanced MIXing Top or Bottom
+        LTRVGT = .FALSE.
+        LTRVGB = .FALSE.
+        DO IS = 1, 2
+            !-----VG position as curvilinear abscissa
+            CALL XIVGSET(IS)
+            !----- VG Status
+            LVGS(IS) = .FALSE.
+            CALL STATUSVG(IS) ! it will check the LENHMIX(IS)
+            !
+            IF (LVGS(IS)) THEN
+                IF ( (IS .EQ. 1) .AND. (XVG(IS) .LT. 1.0) ) THEN
+                    !------- check by-pass transition Top side 
+                    CALL TRVG(XPR, YPR, UPR, show_output, IS, LTRVGT)
+                ELSEIF ( (IS .EQ. 2) .AND. (XVG(IS) .LT. 1.0) ) THEN
+                    !------- check by-pass transition Bottom side 
+                    CALL TRVG(XPR, YPR, UPR, show_output, IS, LTRVGB)
+                ENDIF
+            ENDIF ! ENDIF VGA
+        ENDDO ! IS = 1, 2
+        !       
+        IF ( (LTRVGT) .OR. (LTRVGB) ) THEN
+            !---- if  (LTRVGT/B .GT. 0) a new solution should be computed with forced
+            !     transition at VG, without Enhanced mixing  
+            WRITE(*,*) ' '
+            WRITE(*,*) 'VG trips BL: A new solution is needed!'
+            !CALL VISCAL(ITER)
+            LVConv = viscal(ITER)
+            !---- this implies  LENHMIX(IS) .GT. 0
+            !---- Store the No-Enhanced-Mixing solution for CTAU in CTAUNEM
+            DO IS = 1, 2
+                DO IBL=2, NBL(IS)
+                    CTAUNEM(IBL,IS) = CTAU(IBL,IS)
+                    CTQNEM(IBL,IS) = CTQ(IBL,IS)
+                ENDDO
+            ENDDO 
+            !---- update LENHMIX(IS)
+            IF (LTRVGT) LENHMIX(1) = .TRUE.
+            IF (LTRVGB) LENHMIX(2) = .TRUE.
+            !---- perform a new viscous analysis  
+            WRITE(*,*) ' '
+            WRITE(*,*) 'Enhanced mixing is on: A new solution is needed!'
+            !---- relaxation for the enhanced mixing
+            !---- store original parameter for CTAU enhanced mixing A and B
+            DO IS = 1, 2
+                CTAUVGAO(IS) = CTAUVGA(IS)
+                CTAUVGBO(IS) = CTAUVGB(IS)
+            ENDDO 
+            DO IVG = 1, IVGLIM ! 5 should be passed as input parameter if works
+                DO IS = 1, 2
+                    CTAUVGA(IS) = CTAUVGAO(IS)/REAL(IVGLIM)*REAL(IVG)
+                    CTAUVGB(IS) = (CTAUVGBO(IS)-1.0)/REAL(IVGLIM)*REAL(IVG)+1.0 ! B>=1.0
+                ENDDO 
+                WRITE(*,*) ' '
+                WRITE(*,*) 'Enhanced mixing iter: ',IVG,' of ',IVGLIM
+                WRITE(*,*) ' '         
+                !CALL VISCAL(ITER)
+                LVConv = viscal(ITER) 
+            ENDDO
+        ELSE ! IF ( (LTRVGT .GT. 0) .OR. (LTRVGB .GT. 0) )
+            !---- by-pass transition due to VG is not present
+            !---- should be checked if Enhanced Mixing is present
+            IF ( (LENHMIX(1)) .OR. (LENHMIX(2)) ) THEN
+                !---- Store the No-Enhanced-Mixing solution for CTAU in CTAUNEM
+                DO IS = 1, 2
+                    DO IBL=2, NBL(IS)
+                        CTAUNEM(IBL,IS) = CTAU(IBL,IS)
+                        CTQNEM(IBL,IS) = CTQ(IBL,IS)
+                    ENDDO
+                ENDDO           
+                !---- perform a new viscous analysis
+                WRITE(*,*) ' '
+                WRITE(*,*) 'Enhanced mixing is on: A new solution is needed!'
+                !---- relaxation for the enhanced mixing
+                !---- store original parameter for CTAU enhanced mixing A and B
+                DO IS = 1, 2
+                    CTAUVGAO(IS) = CTAUVGA(IS)
+                    CTAUVGBO(IS) = CTAUVGB(IS)
+                ENDDO 
+                DO IVG = 1, IVGLIM ! 5 should be passed as input parameter if works
+                    DO IS = 1, 2
+                        CTAUVGA(IS) = CTAUVGAO(IS)/REAL(IVGLIM)*REAL(IVG)
+                        CTAUVGB(IS) = (CTAUVGBO(IS)-1.0)/REAL(IVGLIM)*REAL(IVG)+1.0 ! B>=1.0
+                    ENDDO 
+                    WRITE(*,*) ' '
+                    WRITE(*,*) 'Enhanced mixing iter: ',IVG,' of ',IVGLIM
+                    WRITE(*,*) ' '         
+                    ! CALL VISCAL(ITER)
+                    LVConv = viscal(ITER)  
+                ENDDO       
+            ENDIF ! ( (LENHMIX(1) .GT. 0) .OR. (LENHMIX(2) .GT. 0) )
+        ENDIF ! IF ( (LTRVGT .GT. 0) .OR. (LTRVGB .GT. 0) )
+        !      
+        RETURN
+    END subroutine ADDVG  
+
 
 end module m_xoper

@@ -239,6 +239,32 @@ contains
         xtr_bot = XSTrip(2)
     end subroutine get_xtr
 
+    subroutine set_xvg(xvg_top, xvg_bot) bind(c, name='set_xvg')
+        use i_xfoil, only: Xvg, LVConv
+        real(c_float), intent(in) :: xvg_top, xvg_bot
+        Xvg(1) = xvg_top
+        Xvg(2) = xvg_bot
+        LVConv = .false.
+    end subroutine set_xvg
+
+    subroutine set_hvg(hvg_top, hvg_bot) bind(c, name='set_hvg')
+        use i_xfoil, only: Hvg, LVConv
+        real(c_float), intent(in) :: hvg_top, hvg_bot
+        Hvg(1) = hvg_top
+        Hvg(2) = hvg_bot
+        LVConv = .false.
+    end subroutine set_hvg
+
+    subroutine set_ctauvg(ctau_vg_top_A, ctau_vg_top_B, &
+                          ctau_vg_bot_A, ctau_vg_bot_B) bind(c, name='set_ctauvg')
+        use i_xfoil, only: ctauvga, ctauvgb
+        real(c_float), intent(in) :: ctau_vg_top_A, ctau_vg_top_B, ctau_vg_bot_A, ctau_vg_bot_B
+        ctauvga(1) = ctau_vg_top_A
+        ctauvgb(1) = ctau_vg_top_B
+        ctauvga(2) = ctau_vg_bot_A
+        ctauvgb(2) = ctau_vg_bot_B
+    end subroutine set_ctauvg
+
     subroutine set_n_crit(n_crit) bind(c, name='set_n_crit')
         use i_xfoil, only: ACRit, LVConv
         real(c_float), intent(in) :: n_crit
@@ -385,7 +411,7 @@ contains
 
     subroutine aseq(a_start, a_end, n_step, &
                     a_arr, cl_arr, cd_arr, cm_arr, cp_arr, conv_arr) bind(c, name='aseq')
-        use m_xoper, only: specal, viscal, fcpmin
+        use m_xoper, only: specal, viscal, fcpmin, addvg 
         use i_xfoil
         real(c_float), intent(in) :: a_start, a_end
         integer(c_int), intent(in) :: n_step
@@ -414,6 +440,7 @@ contains
             itmaxs = ITMax + 5
             if (LVIsc) then
                 conv_arr(i) = viscal(itmaxs)
+                call addvg(itmaxs)
             end if
             ADEg = ALFa / DTOr
 

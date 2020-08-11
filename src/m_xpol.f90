@@ -77,10 +77,13 @@ contains
                 IPOl(NIPol) = ICH
             endif
             call polwrit(6, ' ', error, .true., NAX, 1, NAPol(Ip), &
-                    CPOl(1, 1, Ip), IPOl, NIPol, REYnp1(Ip), MAChp1(Ip), ACRitp(1, Ip), &
-                    & XSTripp(1, Ip), PTRatp(Ip), ETApp(Ip), &
-                    NAMepol(Ip), IREtyp(Ip), IMAtyp(Ip), ISX, 1, CPOlsd(1, 1, 1, Ip), JPOl, NJPol, &
-                    &'XFOIL', VERsion, .false.)
+                    & CPOl(1, 1, Ip), IPOl, NIPol, REYnp1(Ip), MAChp1(Ip), ACRitp(1, Ip), &
+                    & XSTripp(1, Ip), &
+                    !DanEli
+                    & XVGP(1, Ip), HVGP(1, Ip), &
+                    & PTRatp(Ip), ETApp(Ip), &
+                    & NAMepol(Ip), IREtyp(Ip), IMAtyp(Ip), ISX, 1, CPOlsd(1, 1, 1, Ip), JPOl, NJPol, &
+                    &'VG-FOIL', VERsion, .false.)
             NIPol = NIPol0
             !
             !----- check if geometries differ...
@@ -128,6 +131,14 @@ contains
             XSTrip(1) = XSTripp(1, Ip)
             XSTrip(2) = XSTripp(2, Ip)
             !
+            !DanEli
+            Xvg(1) = XVGP(1, Ip)
+            Xvg(2) = XVGP(2, Ip)
+            !
+            Hvg(1) = HVGP(1, Ip)
+            Hvg(2) = HVGP(2, Ip)
+            !
+
         else
             !----- new polar slot is chosen
             NPOl = Ip
@@ -150,6 +161,13 @@ contains
             !
             XSTripp(1, Ip) = XSTrip(1)
             XSTripp(2, Ip) = XSTrip(2)
+            !
+            !DanEli
+            Xvg(1) = XVGP(1, Ip)
+            Xvg(2) = XVGP(2, Ip)
+            !
+            Hvg(1) = HVGP(1, Ip)
+            Hvg(2) = HVGP(2, Ip)
             !
             NXYpol(Ip) = N
             do i = 1, N
@@ -319,6 +337,8 @@ contains
         open (Lu, file = FNAme, status = 'OLD', err = 100)
         call polread(Lu, ' ', error, NAX, NAPol(Ip), &
                 CPOl(1, 1, Ip), REYnp1(Ip), MAChp1(Ip), ACRitp(1, Ip), XSTripp(1, Ip), PTRatp(Ip), &
+                !DanEli
+                XVGP(1, Ip), HVGP(1,Ip), &
                 & ETApp(Ip), NAMepol(Ip), IREtyp(Ip), IMAtyp(Ip), &
                 ISX, nblp(1, Ip), CPOlsd(1, 1, 1, Ip), CODepol(Ip), VERspol(Ip))
         if (error) then
@@ -347,13 +367,19 @@ contains
             if (namdif .or. REYnp1(Ip)/=REInf1 .or. MAChp1(Ip)/=MINf1 .or. &
                     & IREtyp(Ip)/=RETyp .or. IMAtyp(Ip)/=MATyp .or. &
                     & ACRitp(1, Ip)/=ACRit(1) .or. ACRitp(2, Ip)/=ACRit(2) .or.&
-                    & XSTripp(1, Ip)/=XSTrip(1) .or. XSTripp(2, Ip)/=XSTrip(2))&
+                    & XSTripp(1, Ip)/=XSTrip(1) .or. XSTripp(2, Ip)/=XSTrip(2) .or.&
+                    !DanEli
+                    & XVGP (1, Ip)/=Xvg(1) .or. XVGP(2, Ip)/=Xvg(2) .or.&
+                    & HVGP (1, Ip)/=Hvg(1) .or. HVGP(2, Ip)/=Hvg(2))&
                     & then
                 !
                 if (show_output) then
                     write (*, 99001) NAMe, NAMepol(Ip), REInf1, REYnp1(Ip), MINf1, MAChp1(Ip), RETyp, IREtyp(Ip), MATyp, &
                             & IMAtyp(Ip), ACRit(1), ACRitp(1, Ip), ACRit(2), ACRitp(2, Ip), XSTrip(1), XSTripp(1, Ip), &
-                            & XSTrip(2), XSTripp(2, Ip)
+                            & XSTrip(2), XSTripp(2, Ip), &
+                            !DanEli
+                            & Xvg(1), XVGP(1,Ip), Xvg(2), XVGP(2,Ip), &
+                            & Hvg(1), HVGP(1,Ip), Hvg(2), HVGP(2,Ip)
                     99001  format (&
                             /'               Current                         Save file'&
                             /'           ------------------              ------------------'&
@@ -365,7 +391,12 @@ contains
                             /' NcritT:   ', F12.4, 20X, F12.4&
                             /' NcritB:   ', F12.4, 20X, F12.4&
                             /' xtr T :   ', F12.4, 20X, F12.4&
-                            /' xtr B :   ', F12.4, 20X, F12.4)
+                            /' xtr B :   ', F12.4, 20X, F12.4&
+                            !DanEli
+                            /' xvg T :   ', F12.4, 20X, F12.4&
+                            /' xvg B :   ', F12.4, 20X, F12.4&
+                            /' hvg T :   ', F12.4, 20X, F12.4&
+                            /' hvg B :   ', F12.4, 20X, F12.4)
                 end if
                 !
                 !
@@ -386,6 +417,11 @@ contains
                     ACRit(2) = ACRitp(2, Ip)
                     XSTrip(1) = XSTripp(1, Ip)
                     XSTrip(2) = XSTripp(2, Ip)
+                    !DanEli
+                    Xvg(1) = XVGP(1,Ip)
+                    Xvg(2) = XVGP(2,Ip)
+                    Hvg(1) = HVGP(1,Ip)
+                    Hvg(2) = HVGP(2,Ip)
                 else
                     if (show_output) then
                         write (*, *)
@@ -402,7 +438,10 @@ contains
             endif
             call polwrit(6, ' ', error, .true., NAX, 1, NAPol(Ip), &
                     CPOl(1, 1, Ip), IPOl, NIPol, REYnp1(Ip), MAChp1(Ip), ACRitp(1, Ip), &
-                    & XSTripp(1, Ip), PTRatp(Ip), ETApp(Ip), &
+                    & XSTripp(1, Ip), &
+                    !DanEli
+                    XVGP(1,Ip), HVGP(1,Ip), &
+                    PTRatp(Ip), ETApp(Ip), &
                     NAMepol(Ip), IREtyp(Ip), IMAtyp(Ip), ISX, 1, CPOlsd(1, 1, 1, Ip), JPOl, NJPol, &
                     & CODepol(Ip), VERspol(Ip), .false.)
             !
@@ -432,8 +471,10 @@ contains
         ia2 = -1
         call polwrit(Lu, ' ', error, .true., NAX, ia1, ia2, &
                 CPOl(1, 1, Ip), IPOl, NIPol, REYnp1(Ip), MAChp1(Ip), ACRitp(1, Ip), XSTripp(1, Ip), &
+                !DanEli
+                XVGP(1,Ip), HVGP(1,Ip), &
                 & PTRatp(Ip), ETApp(Ip), &
-                NAMepol(Ip), IREtyp(Ip), IMAtyp(Ip), ISX, 1, CPOlsd(1, 1, 1, Ip), JPOl, NJPol, 'XFOIL', VERsion, &
+                NAMepol(Ip), IREtyp(Ip), IMAtyp(Ip), ISX, 1, CPOlsd(1, 1, 1, Ip), JPOl, NJPol, 'VG-FOIL', VERsion, &
                 & .false.)
         close (Lu)
         PFName(Ip) = FNAme
@@ -612,7 +653,7 @@ contains
         !
         !
         !---- the polar dump file doesn't exist, so write new header
-        200  write (Lu) NAMe, 'XFOIL   ', VERsion
+        200  write (Lu) NAMe, 'VG-FOIL   ', VERsion
         write (Lu) MINf1, REInf1 / 1.0E6, ACRit(1), ACRit(2)
         write (Lu) MATyp, RETyp
         write (Lu) 0, 0, 0, N
@@ -752,8 +793,10 @@ contains
             ia = NAPol(Ip)
             call polwrit(Lu, ' ', error, .false., NAX, ia, ia, &
                     CPOl(1, 1, Ip), IPOl, NIPol, REYnp1(Ip), MAChp1(Ip), ACRitp(1, Ip), XSTripp(1, Ip), &
+                    !DanEli
+                    XVGP(1,Ip), HVGP(1,Ip), &
                     & PTRatp(Ip), ETApp(Ip), &
-                    NAMepol(Ip), IREtyp(Ip), IMAtyp(Ip), ISX, 1, CPOlsd(1, 1, 1, Ip), JPOl, NJPol, 'XFOIL', &
+                    NAMepol(Ip), IREtyp(Ip), IMAtyp(Ip), ISX, 1, CPOlsd(1, 1, 1, Ip), JPOl, NJPol, 'VG-FOIL', &
                     & VERsion, .false.)
             close (Lu)
             NIPol = NIPol0
@@ -974,13 +1017,14 @@ contains
         if (show_output) then
             write (*, *)
             write (*, 99002) '       airfoil                    Re           Mach     ', &
-                &'  NcritT  NcritB  XtripT  XtripB       file'
+                !DanEli
+                &'  NcritT  NcritB  XtripT  XtripB  XvgT  XvgB  HvgT  HvgB   file'
             write (*, 99002) '      ------------------------  ------------  ----------', &
-                &'  ------  ------  ------  ------    -------------------'
+                &'  -----  ------  ------ -----  -----  -----  -----    ---------'
 
         endif
         !CC     >  10  NACA 0012 (mod)           1.232e6/sqCL  0.781/sqCL
-        !CC         9.00    9.00   1.000   1.000
+        !CC         9.00    9.00   1.000   1.000  1.000  1.000
         !CC     1234567890123456789012345678901234567890123456789012345678901234567890
         !
         do ip = Ip1, Ip2
@@ -1010,7 +1054,10 @@ contains
             call strip(PFName(ip), npf)
             if (show_output) then
                 write (*, 99001) cacc, ip, NAMepol(ip), rman, iexp, cltyp(iret), MAChp1(ip), cltyp(imat), ACRitp(1, ip), &
-                        & ACRitp(2, ip), XSTripp(1, ip), XSTripp(2, ip), cfil, PFName(ip)(1:npf)
+                        & ACRitp(2, ip), XSTripp(1, ip), XSTripp(2, ip), &
+                        !DanEli
+                        XVGP(1,ip), XVGP(2,ip), HVGP(1,ip), HVGP(2,ip), &
+                        cfil, PFName(ip)(1:npf)
                 99001 format (1x, a1, i3, 2x, a24, f7.3, 'e', i1, a5, f7.3, a5, 2F8.2, 2F8.3, 2x, a1, 1x, a)
             end if
         enddo
@@ -1123,6 +1170,12 @@ contains
         !
         XSTripp(1, Ip2) = XSTripp(1, Ip1)
         XSTripp(2, Ip2) = XSTripp(2, Ip1)
+        !
+        !DanEli
+        XVGP(1,IP2) = XVGP(1,IP1)
+        XVGP(2,IP2) = XVGP(2,IP1)
+        HVGP(1,IP2) = HVGP(1,IP1)
+        HVGP(2,IP2) = HVGP(2,IP1)
         !
         NAPol(Ip2) = NAPol(Ip1)
         do ia = 1, NAPol(Ip2)

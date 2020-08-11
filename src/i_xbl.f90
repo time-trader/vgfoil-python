@@ -17,6 +17,9 @@
 !   You should have received a copy of the GNU General Public License
 !   along with XFoil.  If not, see <https://www.gnu.org/licenses/>.
 !***********************************************************************
+!   DISCLAIMER 2020.08.06  
+!    Author: Elia Daniele - Fraunhofer IWES,
+!    See further modification by the name DanEli
 
 !*==I_XBL.f90  processed by SPAG 7.21DC at 11:25 on 11 Jan 2019
 module i_xbl
@@ -54,6 +57,10 @@ module i_xbl
     logical :: simi, tran, trforc, trfree, turb, wake
     real, dimension(4, 5) :: vs1, vs2
     real, dimension(4) :: vsm, vsr, vsrez, vsx
+
+    !DanEli
+
+
     !
     !*** End of declarations rewritten by SPAG
     !

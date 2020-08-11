@@ -29,7 +29,7 @@ module i_pindex
     !
     integer, parameter :: IAL = 1, ICL = 2, ICD = 3, ICM = 4, ICW = 5, ICV = 6, ICP = 7, IMA = 8, IRE = 9, &
             & ICH = 10, IMC = 11, ICDH = 12, ICMDOT = 13, IPTOT = 13, JNC = 1, JTP = 2, JTN = 3, &
-            & JTI = 4, JPTOT = 4
+            & JTI = 4, JXVG = 5, JHVG = 6, JPTOT = 6
     !
     ! Local variables
     !
@@ -97,10 +97,10 @@ module i_pindex
             &'F10.5 ', 'F9.4  ', 'F11.5 ', 'F9.5  '/
     !     Cmdot
 
-    data cpolsname/'Ncrit', 'Xtrip', 'Xtr  ', 'Itr  '/
+    data cpolsname/'Ncrit', 'Xtrip', 'Xtr  ', 'Itr  ', 'Xvg  ','Hvg  '/
     !     !    Ncrit
     !     !    Xtrip
     !     !    Xtr
-    data cpolsform/'F7.3  ', 'F9.4  ', 'F9.4  ', 'F9.4  '/
+    data cpolsform/'F7.3  ', 'F9.4  ', 'F9.4  ', 'F9.4  ', 'F9.4  ', 'F9.4  '/
     !    Itr
 end module i_pindex

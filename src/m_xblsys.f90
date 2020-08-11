@@ -17,6 +17,8 @@
 !   You should have received a copy of the GNU General Public License
 !   along with XFoil.  If not, see <https://www.gnu.org/licenses/>.
 !***********************************************************************
+!  DISCLAIMER BLKIN1 subrountine has not been ported
+
 
 !*==TRCHEK.f90  processed by SPAG 7.21DC at 11:25 on 11 Jan 2019
 module m_xblsys

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(xfoil Fortran)
+project(vg-foil Fortran)
 
 enable_language(Fortran)
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} \
@@ -9,7 +9,7 @@ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} \
 -ffpe-trap=invalid,zero \
 -fdefault-real-8")
 
-add_library(xfoil SHARED
+add_library(vgfoil SHARED
         # Include modules
         src/i_pindex.f90
         src/i_xfoil.f90
@@ -39,5 +39,6 @@ add_library(xfoil SHARED
         src/m_xqdes.f90
         src/m_xsolve.f90
         src/m_xutils.f90
+        src/m_profil.f90
         # API
         src/api.f90)

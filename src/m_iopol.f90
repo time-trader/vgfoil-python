@@ -17,13 +17,16 @@
 !   You should have received a copy of the GNU General Public License
 !   along with XFoil.  If not, see <https://www.gnu.org/licenses/>.
 !***********************************************************************
-
+!   DISCLAIMER 2020.08.06  
+!    Author: Elia Daniele - Fraunhofer IWES,
+!    See further modification by the name DanEli
 !*==POLREAD.f90  processed by SPAG 7.21DC at 11:25 on 11 Jan 2019
 module m_iopol
 contains
     subroutine polread(Lu, Fnpol, Error, &
             Nax, Na, Cpol, &
             Reyn1, Mach1, Acrit, Xtrip, &
+            Xvg, Hvg, &
             Ptrat, Etap, &
             Name, Iretyp, Imatyp, &
             Isx, Nbl, Cpolsd, &
@@ -41,7 +44,7 @@ contains
         logical :: Error
         real :: Etap, Mach1, Ptrat, Reyn1, Version
         integer :: Imatyp, Iretyp, Isx, Lu, Na, Nax, Nbl
-        real, dimension(Isx) :: Acrit, Xtrip
+        real, dimension(Isx) :: Acrit, Xtrip, Xvg, Hvg
         real, dimension(Nax, IPTOT) :: Cpol
         real, dimension(Nax, Isx, JPTOT) :: Cpolsd
         intent (in) Fnpol, Isx, Lu, Nax
@@ -57,7 +60,7 @@ contains
         integer, dimension(IPTOT) :: ipol
         integer, dimension(2, IPTOT) :: ispol
         integer, dimension(IPTOT + 2 * JPTOT) :: itmp, itmp0
-        logical :: ldlab, lhead, lima, lire, ljnc, ljtp, lopen
+        logical :: ldlab, lhead, lima, lire, ljnc, ljtp, lopen, ljxvg, ljhvg
         character(128) :: line
         real, dimension(0:IPTOT + 2 * JPTOT) :: rinp
         !
@@ -86,13 +89,16 @@ contains
         !     ISX     airfoil side array dimension
         !
         !  Output:
-        !     ERROR   T if a READ error occurred
+        !     ERROR   T if a read error occurred
         !     NA      number polar points
         !     CPOL    polar coefficients and parameters
         !     REYN1   Reynolds number for CL=1
         !     MACH1   Mach number for CL=1
         !     ACRIT   Critical amplification ratio
         !     XTRIP   Trip locations
+        !	DanEli
+        !     XVG     Vortex generator locations
+    	!     HVG     Vortex generator heights
         !     PTRAT   Actuator disk total-pressure ratio
         !     ETAP    Actuator disk thermal efficiency
         !     NAME    airfoil name string
@@ -255,6 +261,68 @@ contains
                     endif
                     !
                     !--------------------------------------------
+                    !DanEli
+              	    !---- find specified BL vortex generator location
+                                k = INDEX(line,'xvg')
+                                IF ( k/=0 ) THEN
+                    !------ new style xtrip line
+                                kt = INDEX(line,'(top)')
+                                kb = INDEX(line,'(bottom)')
+                                ke = INDEX(line,'element ')
+                    !--- check for old style trip line
+                                ks = INDEX(line,'(suc')
+                                kp = INDEX(line,'(pre')
+                    !
+                                IF ( ke/=0 ) THEN
+                                    READ (line(ke+7:ke+12),*,ERR=140) n
+                                ELSE
+                                    n = 1
+                                ENDIF
+                                IF ( n<=Nbl ) THEN
+                                    is1 = 2*n - 1
+                                    is2 = 2*n
+                                    Xvg(is1) = 1.0
+                                    Xvg(is2) = 1.0
+                                    IF ( kt>0 ) READ (line(k+6:kt-1),*,ERR=140) Xvg(is1)
+                                    IF ( kb>kt ) READ (line(kt+5:kb-1),*,ERR=140) Xvg(is2)
+                                    IF ( ks>0 ) READ (line(k+6:ks-1),*,ERR=140) Xvg(is1)
+                                    IF ( kp>ks ) READ (line(ks+5:kp-1),*,ERR=140) Xvg(is2)
+                                ENDIF
+                    140           ldlab = .FALSE.
+                                ENDIF
+                    !
+                    !--------------------------------------------
+                    !     DanEli 2018.10.24
+                    !---- find specified BL vortex generator heights
+                                k = INDEX(line,'hvg')
+                                IF ( k/=0 ) THEN
+                    !------ new style xtrip line
+                                kt = INDEX(line,'(top)')
+                                kb = INDEX(line,'(bottom)')
+                                ke = INDEX(line,'element ')
+                    !--- check for old style trip line
+                                ks = INDEX(line,'(suc')
+                                kp = INDEX(line,'(pre')
+                    !
+                                IF ( ke/=0 ) THEN
+                                    READ (line(ke+7:ke+12),*,ERR=150) n
+                                ELSE
+                                    n = 1
+                                ENDIF
+                                IF ( n<=Nbl ) THEN
+                                    is1 = 2*n - 1
+                                    is2 = 2*n
+                                    Hvg(is1) = 1.0
+                                    Hvg(is2) = 1.0
+                                    IF ( kt>0 ) READ (line(k+6:kt-1),*,ERR=150) Hvg(is1)
+                                    IF ( kb>kt ) READ (line(kt+5:kb-1),*,ERR=150) Hvg(is2)
+                                    IF ( ks>0 ) READ (line(k+6:ks-1),*,ERR=150) Hvg(is1)
+                                    IF ( kp>ks ) READ (line(ks+5:kp-1),*,ERR=150) Hvg(is2)
+                                ENDIF
+                    150           ldlab = .FALSE.
+                                ENDIF
+                    !
+                    !--------------------------------------------
                     k = index(line, 'Mach =')
                     if (k/=0) then
                         read (line(k + 6:128), *, err = 115) Mach1
@@ -386,16 +454,21 @@ contains
                     acl = max(Cpol(ia, ICL), 0.001)
                     !
                     !
-                    !----- try to find Re, Ma, Ncrit, Xtrip  in polar data
+                    !----- try to find Re, Ma, Ncrit, Xtrip, Xvg, Hvg  in polar data
+                    !DanEli
                     lire = .false.
                     lima = .false.
                     ljnc = .false.
                     ljtp = .false.
+                    ljxvg = .false.
+                    ljhvg = .false.
                     do kp = 1, nipol
                         if (ipol(kp)==IRE) lire = .true.
                         if (ipol(kp)==IMA) lima = .true.
                         if (ispol(1, kp)==JNC) ljnc = .true.
                         if (ispol(1, kp)==JTP) ljtp = .true.
+                        if (ispol(1, kp)==JXVG) ljxvg = .true.
+                        if (ispol(1, kp)==JHVG) ljhvg = .true.
                     enddo
                     !
                     if (.not.lire) then
@@ -434,6 +507,21 @@ contains
                         enddo
                     endif
                     !
+                    !DanEli
+                    IF ( .NOT.ljxvg ) THEN
+                    !------ set vortex generator data using header info
+                        DO is = 1 , 2*Nbl
+                            Cpolsd(ia,is,jxvg) = Xvg(is)
+                        ENDDO
+                    ENDIF
+                    !
+                    IF ( .NOT.ljhvg ) THEN
+                    !------ set vortex generator data using header info
+                        DO is = 1 , 2*Nbl
+                            Cpolsd(ia,is,jhvg) = Hvg(is)
+                        ENDDO
+                    ENDIF                    
+
                     Na = ia
                     !
                     !---- go read next line
@@ -456,6 +544,7 @@ contains
     subroutine polwrit(Lu, Fnpol, Error, Lhead, &
             Nax, Ia1, Ia2, Cpol, Ipol, Nipol, &
             Reyn1, Mach1, Acrit, Xtrip, &
+            Xvg, Hvg, &
             Ptrat, Etap, &
             Name, Iretyp, Imatyp, &
             Isx, Nbl, Cpolsd, Jpol, Njpol, &
@@ -473,7 +562,7 @@ contains
         logical :: Error, Lhead, Lquery
         real :: Etap, Mach1, Ptrat, Reyn1, Version
         integer :: Ia1, Ia2, Imatyp, Iretyp, Isx, Lu, Nax, Nbl, Nipol, Njpol
-        real, dimension(Isx) :: Acrit, Xtrip
+        real, dimension(Isx) :: Acrit, Xtrip, Xvg, Hvg
         real, dimension(Nax, IPTOT) :: Cpol
         real, dimension(Nax, Isx, JPTOT) :: Cpolsd
         integer, dimension(IPTOT) :: Ipol
@@ -521,6 +610,9 @@ contains
         !     MACH1    Mach number for CL=1
         !     ACRIT    Critical amplification ratio
         !     XTRIP    Trip locations
+        !DanEli
+        !     XVG      Vortex generator locations
+        !     HVG      Vortex generator heights
         !     PTRAT   Actuator disk total-pressure ratio
         !     ETAP    Actuator disk thermal efficiency
         !     NAME     airfoil name string
@@ -615,10 +707,19 @@ contains
                 is2 = 2 * n
                 if (Nbl==1) then
                     write (Lu, 99006) Xtrip(is1), Xtrip(is2)
+                    !DanEli
+                    write (Lu, 99020) Xvg(is1), Xvg(is2)
+                    write (Lu, 99021) Hvg(is1), Hvg(is2)
                     99006      format (1x, 'xtrf = ', f7.3, ' (top)    ', f9.3, ' (bottom)  ')
+                    99020      format (1x, ' xvg = ', f7.3, ' (top)    ', f9.3, ' (bottom)  ')
+                    99021      format (1x, ' hvg = ', f7.3, ' (top)    ', f9.3, ' (bottom)  ')
                 else
                     write (Lu, 99007) Xtrip(is1), Xtrip(is2), n
+                    write (Lu, 99022) Xvg(is1), Xvg(is2), n
+                    write (Lu, 99023) Hvg(is1), Hvg(is2), n
                     99007      format (1x, 'xtrf = ', f7.3, ' (top)    ', f9.3, ' (bottom)     element', i3)
+                    99022      format (1x, ' xvg = ', f7.3, ' (top)    ', f9.3, ' (bottom)     element', i3)
+                    99023      format (1x, ' hvg = ', f7.3, ' (top)    ', f9.3, ' (bottom)     element', i3)
                 endif
             enddo
             write (Lu, 99008) Mach1, Reyn1 / 1.0E6, Acrit(1), Acrit(2)
@@ -723,6 +824,10 @@ contains
         linef(kf + 1:kf + 1) = ')'
         kf = kf + 1
         !
+        !DanEli
+        if(Lu/=6) then
+            backspace(Lu)
+        endif
         !
         do ia = Ia1, Ia2
             write (Lu, linef) (Cpol(ia, Ipol(kp)), kp = 1, Nipol), &
@@ -795,7 +900,7 @@ contains
         !     NFX     polar point array dimension
         !
         !  Output:
-        !     ERROR      T if a READ error occurred
+        !     ERROR      T if a read error occurred
         !     NF(.)      number of points in each data block
         !     XYREF(...) reference polar data
         !     LABREF(.)  reference polar label

@@ -27,19 +27,34 @@ module i_xfoil
     !
     ! PARAMETER definitions
     ! IQX = 370 originally
+
+    !Original XFOIL:
+    !integer, parameter :: IQX = 640, IPX = 5, ISX = 2, IWX = IQX / 8 + 2, IBX = 4 * IQX, IZX = IQX + IWX, &
+    !        & IVX = IQX / 2 + IWX + 50, NAX = 800, NPX = 12, NFX = 128, NTX = 2 * IBX
+    
+    !IWES DanEli, considering un-symmetric refinement
+    !integer, parameter :: IQX = 640, IPX = 5, ISX = 2, IWX = IQX / 8 + 2, IBX = 4 * IQX, IZX = IQX + IWX, &
+    !        & IVX = IQX / 2 + IWX + 100, NAX = 800, NPX = 12, NFX = 128, NTX = 2 * IBX, NIL = 100
     integer, parameter :: IQX = 640, IPX = 5, ISX = 2, IWX = IQX / 8 + 2, IBX = 4 * IQX, IZX = IQX + IWX, &
-            & IVX = IQX / 2 + IWX + 50, NAX = 800, NPX = 12, NFX = 128, NTX = 2 * IBX
+            & IVX = IQX / 2 + IWX + 50, NAX = 800, NPX = 12, NFX = 128, NTX = 2 * IBX, NIL = 25
+
     !
     ! Local variables
     !
-    real, dimension(ISX) :: acrit, tindex, xoctr, xssitr, xstrip, yoctr
-    real, dimension(ISX, NPX) :: acritp, xstripp
+    real, dimension(ISX) :: acrit, tindex, xoctr, xssitr, xstrip, yoctr, &
+                           !DanEli
+                           & xvg, hvg, xstripo, xivg, &
+                           & ctauvga, ctauvgb, ctauvgao, ctauvgbo
+    real, dimension(ISX, NPX) :: acritp, xstripp, &
+                                !DanEli
+                                & xvgp, hvgp
     real :: adeg, alfa, algam, angbte, ante, apx1ba, apx1bt, apx2ba, apx2bt, areab, aste, avisc, awake, &
             & cambrb, cd, cdf, cdp, ch, chg, chord, chordb, chq, circ, cl, clgam, clspec, cl_alf, cl_msq, &
             & cm, cmgam, cosa, cpdel, cpmax, cpmin, cpmn, cpmni, cpmnv, cpstar, cterat, ctrrat, cvpar, dste, &
             & dtor, dxyc, dxyg, dxyp, dyoffc, dyoffp, ei11ba, ei11bt, ei22ba, ei22bt, faca, facair, ffilt, &
             & gamm1, gamma, gamte, gamte_a, gtick, hfx, hfy, hmom, hopi, minf, minf1, minf_cl, mvisc, pfac, &
             & pi, plotar, psio, qdof0, qdof1, qdof2, qdof3, qfac, qinf, qopi, qstar
+
     real, dimension(IQX, IQX) :: aij, q
     integer, dimension(IQX) :: aijpiv
     real, dimension(IPX) :: alqsp, clqsp, cmqsp
@@ -54,15 +69,19 @@ module i_xfoil
     real, dimension(IQX, 2, NPX) :: cpolxy
     real, dimension(IQX) :: cpref, dq, dqdg, dzdg, dzdn, gam, gam_a, qf0, qf1, qf2, qf3, xpref
     real, dimension(IVX, ISX) :: ctau, ctq, delt, dis, dstr, guxd, guxq, mass, tau, thet, tstr, uedg, uinv, &
-            & uinv_a, uslp, vti, xssi
+            & uinv_a, uslp, vti, xssi, &
+            !DanEli
+            ctaunem, ctqnem
     real, dimension(IZX, IZX) :: dij
     real, dimension(NPX) :: etapp, machp1, ptratp, reynp1, verspol
     character(64) :: fname, ocname, oname, prefix
     real, dimension(IQX, 2) :: gamu
     integer :: iacqsp, idamp, idev, idevrp, imxbl, ipact, ipslu, iq1, iq2, ismxbl, ist, itmax, ixblp, &
             & kdelim, kimage, kqtarg, matyp, n, nb, nc1, ncam, ncm, ncolor, ncpref, nipol, nipol0, njpol, &
-            & nlref, nname, nover, npan, npol, npolref, nprefix, nqsp, nseqex, nsp, nsys, ntk, nw, retyp
-    integer, dimension(ISX) :: iblte, icols, itran, nbl
+            & nlref, nname, nover, npan, npol, npolref, nprefix, nqsp, nseqex, nsp, nsys, ntk, nw, retyp, &
+            !DanEli
+            & comibl
+    integer, dimension(ISX) :: iblte, icols, itran, nbl, iblvg !Daneli
     integer, dimension(NPX) :: icolp, icolr, ilinp, imatyp, iretyp, isymr, napol, nxypol
     integer, dimension(IVX, ISX) :: ipan, isys
     integer, dimension(IPTOT) :: ipol
@@ -74,7 +93,14 @@ module i_xfoil
             & lgparm, lgsame, lgslop, lgsym, lgtick, lhmomp, limage, lipan, liqset, lland, lnorm, lpacc, &
             & lpcdh, lpcdw, lpcmdot, lpfile, lpfilx, lpgrid, lplcam, lplegn, lplist, lplot, lppsho, lqaij, &
             & lqgrid, lqinu, lqrefl, lqslop, lqspec, lqsppl, lqsym, lqvdes, lscini, lsym, lvconv, lvisc, &
-            & lvlab, lwake, lwdij, ok, sharp
+            & lvlab, lwake, lwdij, ok, sharp, &
+            !DanEli
+            & lkcfun, ldelvg, lmodevg, &
+            !---- lkcfun: boolean argument to enable the dependency of the shear lag
+            !             coefficient K_c on the shape parameter H_k
+            !---- ldelvg: boolean argument to delete VG effect when computing operating point
+            !---- lmodevg: boolean argument to toggle VG MODUS, between Kerho and Sine-Exp, see xblsys.f
+            & ltrvgt, ltrvgb, listop, lisbot, ltrdif
     character(48) :: name
     integer, dimension(4, NPX) :: ndref
     real, dimension(NTX) :: pcam, pcamp, xcadd, xcam, xpadd, ycadd, ycaddp, ycam, ycamp, ypadd, ypaddp
@@ -90,7 +116,7 @@ module i_xfoil
             & ygmin, yimage, yle, ymarg, yof, yofa, yofair, yoff, ypage, ypmax, ypmin, ysf
     real, dimension(2 * IBX) :: scm, stk, xcm, xcmp, xtk, xtkp, ycm, ycmp, ytk, ytkp
     real, dimension(5 * IBX) :: snew
-    logical, dimension(ISX) :: tforce
+    logical, dimension(ISX) :: tforce, lenhmix, lvgs !DanEli
     real, dimension(3, 2, IZX) :: va, vb, vdel
     real, dimension(3, IZX, IZX) :: vm
     character(1) :: vmxbl
@@ -133,6 +159,7 @@ module i_xfoil
     ! NPX   number of polars and reference polars
     ! NFX   number of points in one reference polar
     ! NTX   number of points in thickness/camber arrays
+    ! NIL   number of Newton iteration loops in MRCHUE/MRCHDU in xbl.f (DanEli)
     !
     !---- include polar variable indexing parameters
     !
@@ -296,6 +323,8 @@ module i_xfoil
     !   NDREF(..)   number of points in each stored reference polar
     !   NPOLREF     number of stored reference polars
     !
+    !   COMIBL      current index for panel node. Used in BLSYS
+    !
     !   VERSPOL(.)  version number of generating-code for each polar
     !   CPOL(...)   CL,CD,and other parameters for each polar
     !   CPOLXY(.1.) x,y coordinates of airfoil geometry which generated each polar
@@ -399,6 +428,18 @@ module i_xfoil
     !   LWAKE       .TRUE. if wake geometry has been calculated
     !   LPACC       .TRUE. if each point calculated is to be saved
     !   LBLINI      .TRUE. if BL has been initialized
+    !
+    !   DanEli
+    !   LKCFUN      .TRUE. if shear lag coefficient Kc depends on shape parameter H
+    !   LTRVGT      .TRUE. if transition due to vortex generator is on side, T
+    !   LTRVGB      .TRUE. if transition due to vortex generator is on side, B
+    !   LVGS(ISX)   .TRUE. if VG is ahead of natural or forced transition on side ISX
+    !   LENHMIX(ISX).TRUE. if enhanced mixing in turbulent BL is present on side ISX 
+    !   LDELVG      .TRUE. if the effect of VG has to be deleted after convergence
+    !   LMODEVG     .TRUE. if VG MODUS: could be either KEHR or SINE, see xblsys.f
+    !   LISTOP      .TRUE. if Top side is selected. Used in xbl.f for BLSYS.
+    !   LISBOT      .TRUE. if Bottom side is selected. Used in xbl.f for BLSYS.
+    !
     !   LIPAN       .TRUE. if BL->panel pointers IPAN have been calculated
     !   LQAIJ       .TRUE. if dPsi/dGam matrix has been computed and factored
     !   LADIJ       .TRUE. if dQ/dSig matrix for the airfoil has been computed
@@ -513,6 +554,18 @@ module i_xfoil
     !   ACRIT       log (critical amplification ratio)
     !   XSTRIP(.)   transition trip  x/c locations (if XTRIP > 0),
     !               transition trip -s/s_side locations (if XTRIP < 0),
+    !
+    !   DanEli
+    !   XSTRIPO(.)  original transition trip  x/c locations (if XTRIP > 0),
+    !               original transition trip -s/s_side locations (if XTRIP < 0),
+    !   XVG(.)      vortex generator  x/c locations (if XVG > 0),
+    !               vortex generator -s/s_side locations (if XVG < 0),
+    !   HVG(.)      vortex generator  h/c heights
+    !   CTAUVGA(.)  amplification factor for the enhanced mixing of VG
+    !   CTAUVGB(.)  exponential factor for the enhanced mixing of VG
+    !   CTAUVGAO(.) original amplification factor for the enhanced mixing of VG
+    !   CTAUVGBO(.) original exponential factor for the enhanced mixing of VG
+    !
     !   XOCTR(.)    actual transition x/c locations
     !   YOCTR(.)    actual transition y/c locations
     !   XSSITR(.)   actual transition xi locations
@@ -530,6 +583,8 @@ module i_xfoil
     !
     !   IDAMP    = 0   use original enelope e^n f(H,Rtheta) for all profiles
     !            = 1   use modified enelope e^n f(H,Rtheta) for separating profile
+    !
+    !   IBLVG(.)    BL array index at vortex generator (DanEli)
     !
     !   VA,VB(...)  diagonal and off-diagonal blocks in BL Newton system
     !   VZ(..)      way-off-diagonal block at TE station line

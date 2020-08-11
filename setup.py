@@ -27,7 +27,7 @@ from setuptools.command.build_ext import build_ext
 
 __version__ = re.findall(
     r"""__version__ = ["']+([0-9\.]*)["']+""",
-    open('xfoil/__init__.py').read(),
+    open('vgfoil/__init__.py').read(),
 )[0]
 
 options = {k: 'OFF' for k in ['--opt', '--debug', '--cuda']}
@@ -118,9 +118,9 @@ def readme():
 
 
 setup(
-    name='xfoil',
+    name='vgfoil',
     version=__version__,
-    description='Stripped down version of XFOIL as compiled python module ',
+    description='Stripped down version of XFOIL as compiled python module with VG-FOIL',
     long_description=readme(),
     long_description_content_type='text/markdown',
     classifiers=[
@@ -135,15 +135,15 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
         'Topic :: Scientific/Engineering',
     ],
-    keywords='xfoil airfoil aerodynamic analysis',
+    keywords='xfoil vgfoil airfoil aerodynamic analysis',
     url='https://github.com/daniel-de-vries/xfoil-python',
     download_url='https://github.com/daniel-de-vries/xfoil-python/tarball/' + __version__,
     author='Daniël de Vries',
     author_email='contact@daniel-de-vries.com',
     license='GNU General Public License v3 or later (GPLv3+)',
-    packages=['xfoil'],
+    packages=['vgfoil'],
     # package_dir={'': 'src'},
-    ext_modules=[CMakeExtension('xfoil.xfoil')],
+    ext_modules=[CMakeExtension('vgfoil.vgfoil')],
     cmdclass={'build_ext': CMakeBuild},
     install_requires=['numpy'],
     zip_save=False

@@ -20,6 +20,7 @@
 
 !*==XFOIL.f90  processed by SPAG 7.21DC at 11:25 on 11 Jan 2019
 module m_xfoil
+!    use m_xfoil, only: getpan, save, intx, pangen, load, init, naca, inte, getdef, wrtdef
 contains
 subroutine xfoil() bind(c, name='xfoil')
 !    use m_xfoil, only: getpan, save, intx, pangen, load, init, naca, inte, getdef, wrtdef
@@ -66,12 +67,18 @@ subroutine xfoil() bind(c, name='xfoil')
     data angtol/40.0/
     !
     !
-    VERsion = 6.99
+    VERsion = 1.00
     if (show_output) write (*, 99001) VERsion
-    99001 format (/' ==================================================='/'  XFOIL Version', &
-        &f5.2/'  Copyright (C) 2000   Mark Drela, Harold Youngren'//                                               &
-        &'  This software comes with ABSOLUTELY NO WARRANTY,'/'    subject to the GNU General Public License.'//   &
-        &'  Caveat computor'/' ===================================================')
+    99001 format (/' ===================================================', &
+        & / '  VG-FOIL Version', f5.2, & 
+        & / '  Copyright (C) 2000   Mark Drela, Harold Youngren', &
+        & //'  This software comes with ABSOLUTELY NO WARRANTY,', &
+        & / '    subject to the GNU General Public License.', &
+        & //'  Major modifications to include the effect of a ', &
+        &  /'  vortex generator performed by Fraunhofer IWES.', &
+        &  /'  See documentation for more information.', &
+        & //'  Caveat computor', &
+        & / ' ===================================================')
     !
     call init
     lu = 8
@@ -466,6 +473,12 @@ subroutine init() bind(c, name='init')
     LWAke = .false.
     LPAcc = .false.
     LBLini = .false.
+
+    !DanEli
+    LKCfun = .true.
+    LDELvg = .false.
+    LMODEvg = .true.
+
     LIPan = .false.
     LQAij = .false.
     LADij = .false.
@@ -620,6 +633,19 @@ subroutine init() bind(c, name='init')
     ACRit(2) = 9.0
     XSTrip(1) = 1.0
     XSTrip(2) = 1.0
+
+    !DanEli
+    XSTripo(1) = 1.0
+    XSTripo(2) = 1.0
+    Xvg(1) = 1.0
+    Xvg(2) = 1.0
+    Hvg(1) = 0.001
+    Hvg(2) = 0.001
+    CTAUVGA(1) = 0.0 ! Amplitude Kerho modification side Top
+    CTAUVGA(2) = 0.0 ! Amplitude Kerho modification side Bottom
+    CTAUVGB(1) = 0.0 ! Exponent Kerho modification side Top
+    CTAUVGB(2) = 0.0 ! Exponent Kerho modification side Bottom
+
     XOCtr(1) = 1.0
     XOCtr(2) = 1.0
     YOCtr(1) = 0.
@@ -775,6 +801,10 @@ subroutine getdef(Lu, Filnam, Lask)
     read (Lu, *, err = 100) RETyp, rmill, ACRit(1), ACRit(2)
     read (Lu, *, err = 100) XSTrip(1), XSTrip(2)
     !
+    !DanEli
+    read (Lu, *, err = 100) Xvg(1), Xvg(2)
+    read (Lu, *, err = 100) Hvg(1), Hvg(2)
+
     if (lcolor) IDEvrp = 4
     if (.not.lcolor) IDEvrp = 2
     !
@@ -886,6 +916,12 @@ subroutine wrtdef(Lu)
     write (Lu, 99014) XSTrip(1), XSTrip(2)
     99014 format (1x, f9.4, f9.4, 9x, 9x, ' | XtripT  XtripB')
     !
+    !DanEli
+    write (Lu, 99015) Xvg(1), Xvg(2)
+    99015 format (1x, f9.4, f9.4, 9x, 9x, ' | XvgT  XvgB')
+    write (Lu, 99016) Hvg(1), Hvg(2)
+    99016 format (1x, f9.4, f9.4, 9x, 9x, ' | HvgT  HvgB')
+
 end subroutine wrtdef
 !*==COMSET.f90  processed by SPAG 7.21DC at 11:25 on 11 Jan 2019
 ! WRTDEF
