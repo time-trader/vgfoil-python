@@ -2116,8 +2116,8 @@ contains
         !
         !
         SCCon = 5.6
-        GACon = 6.70
-        GBCon = 0.75
+        !GACon = 6.70
+        !GBCon = 0.75
         GCCon = 18.0
         DLCon = 0.9
         !
@@ -2126,8 +2126,8 @@ contains
         !---- original value of Drela     GBCON = 0.75
         !---- new values of van Rooij, section 3.3.4, page 16-17: GACON = 6.95, GBCON = 0.95
         !---- new values of van Rooij, section 3.3.4, page 16-17
-        !GACon = 5.5 !6.0 !6.7 !5.5 !5.0 !6.5 !6.75 !6.7 !6.75
-        !GBCon = 0.9 !0.75 !0.9 !0.83 !0.75 !0.83
+        GACon = 5.5 !6.0 !6.7 !5.5 !5.0 !6.5 !6.75 !6.7 !6.75
+        GBCon = 0.9 !0.75 !0.9 !0.83 !0.75 !0.83
         !good for DU97W300 with GACON=5.5, GBCON=0.8 and (A=0.3,B=2.5)
         !
         CTRcon = 1.8
@@ -2157,16 +2157,16 @@ contains
         !      
             !DO IS=1, 2
             IF ( XVG(IS) .LT. XOCTR(IS) ) THEN
-                WRITE(*,*) 'Side ',IS,' Vortex Generator is ahead of both', &
-            &  ' natural and/or force transition: POSSIBLE BY-PASS TRANSITION'
+                if (show_output) write (*,*) 'Side ',IS,' Vortex Generator is ahead of both', &
+                                 &  ' natural and/or force transition: POSSIBLE BY-PASS TRANSITION'
                 LVGS(IS) = .TRUE.
             ELSE
-                WRITE(*,*) 'Side ',IS,' Vortex Generator is beyond both', &
-            &  ' natural and/or force transition: NO BY-PASS TRANSITION'
+                if (show_output) write(*,*) 'Side ',IS,' Vortex Generator is beyond both', &
+                                 &  ' natural and/or force transition: NO BY-PASS TRANSITION'
                 IF ( XVG(IS) .LT. XTE ) THEN ! XVG on the surface
-                WRITE(*,*) 'Side ',IS,' Vortex Generator is promoting', &
-            &  ' an enhanced mixing in the turbulent BL'
-                LENHMIX(IS) = .TRUE.
+                    if (show_output) write(*,*) 'Side ',IS,' Vortex Generator is promoting', &
+                                     &  ' an enhanced mixing in the turbulent BL'
+                    LENHMIX(IS) = .TRUE.
                 ENDIF
             ENDIF
             !ENDDO
@@ -2293,7 +2293,7 @@ contains
         XPR(IPR) = SEVAL(SPR,X,XP,S,N) + DOFF*DEVAL(SPR,Y,YP,S,N)
         YPR(IPR) = SEVAL(SPR,Y,YP,S,N) - DOFF*DEVAL(SPR,X,XP,S,N)
         !
-        CALL UBLGET(XPR(IPR),YPR(IPR),HVG(IPR),0, UPR(IPR) )
+        CALL UBLGET(XPR(IPR),YPR(IPR),HVG(IPR),.false., show_output, UPR(IPR))
         !
         !----- display velocity profile value at HVG
         IF (LOUT) THEN
@@ -2314,7 +2314,7 @@ contains
                 9000 FORMAT('RE_VG =', F12.4, ' >= RE_CR =', F12.4)  
                 XSTRIP(IPR) = XVG(IPR)
             ELSE
-                WRITE(*,*) 'Side ',IPR,' Transition forced at VG'
+                if (show_output) write(*,*) 'Side ',IPR,' Transition forced at VG'
                 XSTRIP(IPR) = XVG(IPR)
             ENDIF
         ELSE
@@ -2330,7 +2330,7 @@ contains
 
     end subroutine trvg
 
-    SUBROUTINE UBLGET(XPR,YPR,HPR,LOUT, UPR)
+    SUBROUTINE UBLGET(XPR,YPR,HPR,DEBUG,LOUT,UPR)
         !-----------------------------------------------------------------
         !     DanEli 2018.10.24
         !     Display velocity profile taken from flow solution at a 
@@ -2350,7 +2350,7 @@ contains
         DIMENSION YY(KPRX), UU(KPRX), FFS(KPRX), SFS(KPRX)
         
         CHARACTER*1 KCHAR
-        LOGICAL TURB
+        LOGICAL TURB, DEBUG, LOUT
         INTEGER KVG ! index of HPR position within normal coordinate Y
         REAL WFUE1, WFUE2 ! weighting factor for interpolation of U edge
         !
@@ -2453,7 +2453,7 @@ contains
         !---- calculate kinematic shape parameter (assuming air)
         !     (from Whitfield )
         !
-        IF (LOUT .GT. 0) THEN
+        IF (DEBUG) THEN
             WRITE(*,9100) X0,Y0, DS, RTHETA, HK
             9100  FORMAT(1X,'x y =', 2F8.4,'    Delta* =', G12.4, &
                         &'    Rtheta =', F10.2,'    Hk =', F9.4)
@@ -2475,7 +2475,7 @@ contains
         DK = HK*TH
         CT = 0.
         !
-        IF (LOUT  .GT. 0) THEN
+        IF (DEBUG) THEN
             WRITE(*,9200) DK, TH, UE, QINF
             9200 FORMAT(1X,'Delta* kin. =', G12.4,'    Theta kin. =', G12.4, &
              &       '    U edge =', F10.6,'    Q inf =', F9.4)
@@ -2556,7 +2556,7 @@ contains
         ENDIF
         !
         !---- check if VG lies within the boundary layer thickness
-        IF (YY(NN) .LT. HPR) THEN
+        IF (YY(NN) .LT. HPR .and. LOUT) THEN
             WRITE(*,*) '*************************************************'
             WRITE(*,*) '*              UBLGET in dplot.f                *'
             WRITE(*,*) '*             VG lies outside BL                *'
@@ -2566,11 +2566,11 @@ contains
             WRITE(*,*) '*            Consider new sizing!               *'
             WRITE(*,*) '*************************************************'
             HPR = YY(NN)
-            IF (LOUT  .GT. 0) THEN
+            IF (DEBUG) THEN
                 WRITE(*,*) 'VG lies outside BL: Consider new sizing!'
             ENDIF 
         ELSE
-            IF (LOUT  .GT. 0) THEN
+            IF (DEBUG) THEN
                 WRITE(*,*) 'VG lies inside BL'
             ENDIF
         ENDIF
@@ -2591,7 +2591,7 @@ contains
         WFUE2 = (HPR - YY(KVG-1)) / (YY(KVG) - YY(KVG-1))
         UPR   = WFUE1*UU(KVG - 1) + WFUE2*UU(KVG)
         !
-        IF (LOUT .GT. 0) THEN
+        IF (DEBUG) THEN
             WRITE(*,9300) HPR, UPR
             9300  FORMAT(1X,'HVG =', F8.4, '    UVG =', F8.4) 
             !

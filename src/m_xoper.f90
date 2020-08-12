@@ -2852,8 +2852,8 @@ contains
                     CTQ(IBL,IS) = CTQNEM(IBL,IS)
                 ENDDO
             ENDDO            
-            WRITE(*,*) ' '
-            WRITE(*,*) 'Load back solution without VG Enhanced Mixing!'
+            if (show_output) write (*, *) ' '
+            if (show_output) write (*, *) 'Load back solution without VG Enhanced Mixing!'
             !CALL VISCAL(ITER) !temporary remove for debugging
             LVConv = viscal(ITER)
             !----   second step
@@ -2861,8 +2861,8 @@ contains
             LTRVGB = .FALSE.
             XSTRIP(1) = XSTRIPO(1)
             XSTRIP(2) = XSTRIPO(2)
-            WRITE(*,*) ' '
-            WRITE(*,*) 'Load back solution without VG By-Pass Transition!'
+            if (show_output) write (*, *) ' '
+            if (show_output) write (*, *) 'Load back solution without VG By-Pass Transition!'
             !CALL VISCAL(ITER) !temporary remove for debugging
             LVConv = viscal(ITER)
         ENDIF
@@ -2911,8 +2911,8 @@ contains
         IF ( (LTRVGT) .OR. (LTRVGB) ) THEN
             !---- if  (LTRVGT/B .GT. 0) a new solution should be computed with forced
             !     transition at VG, without Enhanced mixing  
-            WRITE(*,*) ' '
-            WRITE(*,*) 'VG trips BL: A new solution is needed!'
+            if (show_output) write (*, *) ' '
+            if (show_output) write (*, *) 'VG trips BL: A new solution is needed!'
             !CALL VISCAL(ITER)
             LVConv = viscal(ITER)
             !---- this implies  LENHMIX(IS) .GT. 0
@@ -2927,8 +2927,8 @@ contains
             IF (LTRVGT) LENHMIX(1) = .TRUE.
             IF (LTRVGB) LENHMIX(2) = .TRUE.
             !---- perform a new viscous analysis  
-            WRITE(*,*) ' '
-            WRITE(*,*) 'Enhanced mixing is on: A new solution is needed!'
+            if (show_output) write (*, *) ' '
+            if (show_output) write (*, *) 'Enhanced mixing is on: A new solution is needed!'
             !---- relaxation for the enhanced mixing
             !---- store original parameter for CTAU enhanced mixing A and B
             DO IS = 1, 2
@@ -2940,9 +2940,9 @@ contains
                     CTAUVGA(IS) = CTAUVGAO(IS)/REAL(IVGLIM)*REAL(IVG)
                     CTAUVGB(IS) = (CTAUVGBO(IS)-1.0)/REAL(IVGLIM)*REAL(IVG)+1.0 ! B>=1.0
                 ENDDO 
-                WRITE(*,*) ' '
-                WRITE(*,*) 'Enhanced mixing iter: ',IVG,' of ',IVGLIM
-                WRITE(*,*) ' '         
+                if (show_output) write (*, *) ' '
+                if (show_output) write (*, *) 'Enhanced mixing iter: ',IVG,' of ',IVGLIM
+                if (show_output) write (*, *) ' '         
                 !CALL VISCAL(ITER)
                 LVConv = viscal(ITER) 
             ENDDO
@@ -2958,8 +2958,8 @@ contains
                     ENDDO
                 ENDDO           
                 !---- perform a new viscous analysis
-                WRITE(*,*) ' '
-                WRITE(*,*) 'Enhanced mixing is on: A new solution is needed!'
+                if (show_output) write (*, *) ' '
+                if (show_output) write (*, *) 'Enhanced mixing is on: A new solution is needed!'
                 !---- relaxation for the enhanced mixing
                 !---- store original parameter for CTAU enhanced mixing A and B
                 DO IS = 1, 2
@@ -2971,9 +2971,9 @@ contains
                         CTAUVGA(IS) = CTAUVGAO(IS)/REAL(IVGLIM)*REAL(IVG)
                         CTAUVGB(IS) = (CTAUVGBO(IS)-1.0)/REAL(IVGLIM)*REAL(IVG)+1.0 ! B>=1.0
                     ENDDO 
-                    WRITE(*,*) ' '
-                    WRITE(*,*) 'Enhanced mixing iter: ',IVG,' of ',IVGLIM
-                    WRITE(*,*) ' '         
+                    if (show_output) write (*, *) ' '
+                    if (show_output) write (*, *) 'Enhanced mixing iter: ',IVG,' of ',IVGLIM
+                    if (show_output) write (*, *) ' '         
                     ! CALL VISCAL(ITER)
                     LVConv = viscal(ITER)  
                 ENDDO       

@@ -31,12 +31,12 @@ module i_xfoil
     !Original XFOIL:
     !integer, parameter :: IQX = 640, IPX = 5, ISX = 2, IWX = IQX / 8 + 2, IBX = 4 * IQX, IZX = IQX + IWX, &
     !        & IVX = IQX / 2 + IWX + 50, NAX = 800, NPX = 12, NFX = 128, NTX = 2 * IBX
-    
+    !NIL is hardcoded to 25
     !IWES DanEli, considering un-symmetric refinement
     !integer, parameter :: IQX = 640, IPX = 5, ISX = 2, IWX = IQX / 8 + 2, IBX = 4 * IQX, IZX = IQX + IWX, &
     !        & IVX = IQX / 2 + IWX + 100, NAX = 800, NPX = 12, NFX = 128, NTX = 2 * IBX, NIL = 100
     integer, parameter :: IQX = 640, IPX = 5, ISX = 2, IWX = IQX / 8 + 2, IBX = 4 * IQX, IZX = IQX + IWX, &
-            & IVX = IQX / 2 + IWX + 50, NAX = 800, NPX = 12, NFX = 128, NTX = 2 * IBX, NIL = 25
+            & IVX = IQX / 2 + IWX + 100, NAX = 800, NPX = 12, NFX = 128, NTX = 2 * IBX, NIL = 100
 
     !
     ! Local variables
