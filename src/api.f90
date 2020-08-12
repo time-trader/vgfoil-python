@@ -411,7 +411,7 @@ contains
 
     subroutine aseq(a_start, a_end, n_step, &
                     a_arr, cl_arr, cd_arr, cm_arr, cp_arr, conv_arr) bind(c, name='aseq')
-        use m_xoper, only: specal, viscal, fcpmin, addvg 
+        use m_xoper, only: specal, viscal, fcpmin, addvg, delvg 
         use i_xfoil
         real(c_float), intent(in) :: a_start, a_end
         integer(c_int), intent(in) :: n_step
@@ -457,6 +457,9 @@ contains
             elseif (LVIsc .and. .not. (LVConv .and. conv_arr(i))) then
                 conv_arr(i) = .false.
             endif
+            
+            call delvg(itmaxs)
+
         end do
     end subroutine aseq
 
